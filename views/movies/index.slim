@@ -1,0 +1,22 @@
+
+h1 All movies 
+
+ol
+  - @movies.each do |movie|
+    li 
+      a #{movie["Name"]} /
+      a href="#{movie['link']}" Gå till faktasida
+      form method="GET" action="movies/update/#{movie['Id']}"
+        input type="submit" value="Update" 
+      form method="POST" action="movies/delete/#{movie['Id']}"
+        input type="submit" value="Delete"
+      form method="GET" action="movie/rate/#{movie['Id']}"
+        input type="submit" value="Rate"
+      
+      
+
+
+
+
+
+

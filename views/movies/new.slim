@@ -1,0 +1,8 @@
+
+form action="/newmovie" method="POST"
+    input type="text" name="movie" placeholder="enter movie"
+    select# name="genre_id"
+        - for genre in @genres 
+            option value="#{genre["genre_id"]}" #{genre["Genrename"]}
+    input type="text" name="link" placeholder="enter link"
+    input type="submit" value="Add movie"/
