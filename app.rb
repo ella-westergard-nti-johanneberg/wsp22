@@ -3,6 +3,8 @@ require 'slim'
 require 'sqlite3'
 require 'bcrypt'
 
+enable :sessions
+
 def connect_to_db(path)
     db = SQLite3::Database.new(path)
     db.results_as_hash = true
@@ -25,20 +27,24 @@ end
 post('/login') do
     username = params[:username]
     password = params[:password]
-
     db = connect_to_db("db/filmprojekt.db")
-
-    result = db.execute("SELECT * FROM user WHERE username = ?", username).first
+    result = db.execute("SELECT * FROM user WHERE username = ?",username).first
+    if result == nil
+      redirect("/")
+      p "Fel"
+    end
     pwdigest = result["pwdigest"]
     id = result["id"]
-
+    auth = result["authority"]
     if BCrypt::Password.new(pwdigest) == password
       session[:id] = id
+      session[:auth] = auth
       redirect('/')
     else
-      "Fel lösenord!"
+      redirect('/')
+      p "fel lösen"
     end
-end
+ end
 
 
 post('/users/new') do
@@ -48,8 +54,9 @@ post('/users/new') do
 
     if(password == password_confirm)
       password_digest = BCrypt::Password.create(password)
+      authority = 1
       db = connect_to_db("db/filmprojekt.db")
-      db.execute("INSERT INTO user (username,pwdigest) VALUES (?,?)",username,password_digest)
+      db.execute("INSERT INTO user (username,pwdigest,authority) VALUES (?,?,?)",username,password_digest,authority)
       redirect('/')
     else
       "Lösenorden matchade inte"
@@ -112,28 +119,10 @@ get("/movies/update/:id") do
     slim(:"movies/edit")
 end
 
-get('/movies/:id/rate') do 
-    @rate = params[:id]
-    @ratetitle = db.execute("SELECT * FROM movie WHERE id=?", @rateid).first
-   
-    p @ratetitle
-
-    slim(:"movies/rate")
-end
-post('/movies/:rateid/rate') do
-    db = connect_to_db("db/filmprojekt.db")
-    user_rate = params[:user_rate]
-
-    p db.execute("SELECT user_id FROM user_movive_relation WHERE EXISTS user_id = ?", session[:id])
-end
-
 get('/showlogin')  do
     slim(:login)
 end 
 
-post('/login') do
-
-end
 
 post("/movie/:editid/update") do
     
@@ -147,3 +136,21 @@ post("/movie/:editid/update") do
     redirect('/movies')
 end
 
+get ('/movie/rate/:id') do
+    id = params[:id].to_i
+    db = connect_to_db("db/filmprojekt.db")
+    user_id = session[id]
+    db.results_as_hash = true
+    result = db.execute("SELECT * FROM movie WHERE id= ?", id).first
+    slim(:"movies/rate",locals:{result:result})
+end
+
+
+post('/movie/:id/rated') do
+  movie_id = params[:id].to_i
+  rating = params[:rating].to_i
+  user_id = session[:id]
+  db = connect_to_db("db/filmprojekt.db")
+  db.execute("INSERT INTO users_titles (user_id,movie_id,rating) VALUES (?,?,?)", user_id,movie_id,rating).first
+  redirect('/')
+end

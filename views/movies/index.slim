@@ -1,7 +1,8 @@
 
 h1 All movies 
 
-ol
+-if session[:id] != nil
+  ol
   - @movies.each do |movie|
     li 
       a #{movie["Name"]} /
@@ -12,11 +13,4 @@ ol
         input type="submit" value="Delete"
       form method="GET" action="movie/rate/#{movie['Id']}"
         input type="submit" value="Rate"
-      
-      
-
-
-
-
-
 
