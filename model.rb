@@ -29,10 +29,22 @@ def  login(username, password)
     end
 end
 
-def new_user_or_admin(username, password, password_confirm, auth)
+def new_user(username, password, password_confirm)
     if(password == password_confirm)
         password_digest = BCrypt::Password.create(password)
         authority = 1
+        db = connect_to_db("db/filmprojekt.db")
+        db.execute("INSERT INTO user (username,pwdigest,authority) VALUES (?,?,?)",username,password_digest,authority)
+        redirect('/')
+      else
+        "Lösenorden matchade inte"
+      end
+end
+
+def new_user_admin(username, password, password_confirm)
+    if(password == password_confirm)
+        password_digest = BCrypt::Password.create(password)
+        authority = 2
         db = connect_to_db("db/filmprojekt.db")
         db.execute("INSERT INTO user (username,pwdigest,authority) VALUES (?,?,?)",username,password_digest,authority)
         redirect('/')

@@ -45,14 +45,14 @@ post('/users/new') do
     username = params[:username]
     password = params[:password]
     password_confirm = params[:password_confirm]
-    new_user_or_admin(username, password, password_confirm, 1)
+    new_user(username, password, password_confirm)
 end
 
 post('/admin/new') do
     username = params[:username]
     password = params[:password]
     password_confirm = params[:password_confirm]
-    new_user_or_admin(username, password, password_confirm, 2)
+    new_user_admin(username, password, password_confirm)
 end
 
 
