@@ -6,15 +6,23 @@ html lang="en"
         meta name="viewport" content="width=device-width, initial-scale=1.0"/
         title Document
     body
-        h1 Movies!
+        h1 Välkommen till filmsidan 
         nav 
-            h2 All movies 
-            a href="/movies" Movies 
-            h2 Login
-            a href="/showlogin" Login
-            h2 Register 
-            a href="/showregister" Register 
-            -if session[:id] != nil && session[:auth] == 2
-                a href="/new" New
+            
+            -if session[:id] == nil || session[:auth] == nil 
+                a href="/showlogin" 
+                    h2 Login
+                a href="/showregister"  
+                    h2 Register 
+                a href="/showadminregister"  
+                    h2 Register as admin
+
+            -if session[:id] != nil && session[:auth] == 1 || session[:auth] == 2
+                a href="/movies"
+                    h2 All movies 
+                a href="/new" 
+                    h2 New
+                a href="/logout" 
+                    h2 Log out
         
         ==yield 
