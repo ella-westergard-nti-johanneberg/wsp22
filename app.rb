@@ -6,6 +6,29 @@ require_relative './model.rb'
 
 enable :sessions
 
+before ('/movie/:rateid/rate') do
+    validate()
+end
+
+before ('/movie/:editid/update') do
+    validate()
+end
+
+before ('/movie/id/delete') do
+    validate_admin()
+end
+
+before ('/movie/new') do
+    validate()
+end
+
+get('/error') do
+    slim(:error)
+end
+
+get('/adminerror') do
+    slim(:error)
+end
 
 get('/') do
     slim(:start)
@@ -29,9 +52,13 @@ get('/showlogin') do
 end
 
 post('/login') do
-    username = params[:username]
-    password = params[:password]
-    login(username, password)
+    if logTime()
+        username = params[:username]
+        password = params[:password]
+        login(username, password)
+    else
+        redirect('/showlogin')
+    end
  end
 
 get('/logout') do
@@ -42,36 +69,42 @@ end
 
 
 post('/users/new') do
-    username = params[:username]
-    password = params[:password]
-    password_confirm = params[:password_confirm]
-    new_user(username, password, password_confirm)
+    if logTime()
+        username = params[:username]
+        password = params[:password]
+        password_confirm = params[:password_confirm]
+        new_user(username, password, password_confirm)
+    else
+        redirect('/showregister')
+    end
 end
 
 post('/admin/new') do
-    username = params[:username]
-    password = params[:password]
-    password_confirm = params[:password_confirm]
-    new_user_admin(username, password, password_confirm)
+    if logTime()
+        username = params[:username]
+        password = params[:password]
+        password_confirm = params[:password_confirm]
+        new_user_admin(username, password, password_confirm)
+    else
+        redirect('/showadminregister')
+    end
 end
-
 
 get("/new")do
     @genres = new_movie()
     slim(:"movies/new")
 end
 
-post("/newmovie") do
+post("/movie/new") do
     movie = params[:movie]
     genre_id = params[:genre_id]
     link = params[:link]
     
     new_movie_post(movie, genre_id, link)
-
     redirect('/')
 end
 
-post("/movies/delete/:id") do
+post("/movie/:id/delete") do
     id = params[:id]
    
     delete(id)
@@ -79,7 +112,7 @@ post("/movies/delete/:id") do
     redirect('/movies')
 end
 
-get("/movies/update/:id") do
+get("/movie/:id/update") do
     @editid = params[:id]
 
     @genres = genres()
@@ -103,7 +136,7 @@ post("/movie/:editid/update") do
     redirect('/movies')
 end
 
-get('/movie/rate/:id') do
+get('/movie/:id/rate') do
     
 
     @rateid = params[:id]

@@ -92,3 +92,34 @@ def rate_post(user_rate, movie_id, user_id)
     db = connect_to_db("db/filmprojekt.db")
     db.execute("INSERT INTO user_movie_relation (rating, user_id, movie_id) VALUES (?,?,?)", user_rate, user_id, movie_id)
 end
+
+def validate()
+    if session[:id] == nil
+        redirect('/error')
+    end
+end
+
+def validate_admin()
+    if session[:id] == nil || session[:auth] == 1
+        redirect('/adminerror')
+    end
+end
+
+def logTime()
+    tempTime = Time.now.to_i
+
+    if session[:timeLogged] == nil
+        session[:timeLogged] = 0
+    end
+    difTime = tempTime - session[:timeLogged]
+
+    if difTime < 5000
+        session[:timeLogged] = tempTime
+        session[:stress] = true
+        return false
+    else
+        session[:timeLogged] = tempTime
+        session[:stress] = false
+        return true
+    end
+end
