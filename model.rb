@@ -113,7 +113,7 @@ def logTime()
     end
     difTime = tempTime - session[:timeLogged]
 
-    if difTime < 5000
+    if difTime < 500
         session[:timeLogged] = tempTime
         session[:stress] = true
         return false
