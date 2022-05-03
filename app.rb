@@ -53,12 +53,21 @@ end
 
 post('/login') do
     if logTime()
+        p "TEST"
         username = params[:username]
         password = params[:password]
         login(username, password)
     else
         redirect('/showlogin')
     end
+ end
+
+ get('/showaccount') do
+    id = session[:id]
+    @your_account = account(id)
+    @your_rating = account_rating(id)
+    @titles = index()
+    slim(:"movies/account")
  end
 
 get('/logout') do
@@ -109,7 +118,16 @@ post("/movie/:id/delete") do
    
     delete(id)
     
-    redirect('/movies')
+    redirect('/')
+end
+
+post("/movies/:movie_id/rate_delete") do
+    movie_id = params[:movie_id]
+    user_id = session[:id]
+
+    rate_delete(movie_id, user_id)
+
+    redirect('/showaccount')
 end
 
 get("/movie/:id/update") do

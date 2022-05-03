@@ -1,0 +1,18 @@
+
+h1 Your account details: 
+h3 Username: #{@your_account["username"]}
+- if @your_account["authority"] == 1
+    h3 Authority: User 
+- elsif @your_account["authority"] == 2
+    h3 Authority: Admin
+h1 Your account ratings:
+ul
+    - @titles.each do |title|
+        - @your_rating.each do |rating|
+            - if rating["movie_id"] == title["Id"]
+                li
+                    p #{title["Name"]}
+                    p Your rating: #{rating["rating"]}
+                    form method="POST" action="/movies/#{title['Id']}/rate_delete"
+                        input type="submit" value="Delete"
+

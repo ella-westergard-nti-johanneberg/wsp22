@@ -29,6 +29,16 @@ def  login(username, password)
     end
 end
 
+def account(id)
+    db = connect_to_db("db/filmprojekt.db")
+    return db.execute("SELECT * FROM user WHERE id = ?", id).first
+end
+
+def account_rating(id)
+    db = connect_to_db("db/filmprojekt.db")
+    return db.execute("SELECT * FROM user_movie_relation WHERE user_id =?", id)
+end
+
 def new_user(username, password, password_confirm)
     if(password == password_confirm)
         password_digest = BCrypt::Password.create(password)
@@ -90,7 +100,18 @@ end
 
 def rate_post(user_rate, movie_id, user_id)
     db = connect_to_db("db/filmprojekt.db")
-    db.execute("INSERT INTO user_movie_relation (rating, user_id, movie_id) VALUES (?,?,?)", user_rate, user_id, movie_id)
+    
+
+    if db.execute("SELECT rating FROM user_movie_relation WHERE user_id = ? AND movie_id = ?", user_id, movie_id).first == nil
+        db.execute("INSERT INTO user_movie_relation (rating, user_id, movie_id) VALUES (?,?,?)", user_rate, user_id, movie_id)
+    else
+        db.execute("UPDATE user_movie_relation SET rating = ? WHERE user_id = ? AND movie_id = ?", user_rate, user_id, movie_id)
+    end
+end
+
+def rate_delete(movie_id, user_id)
+    db = connect_to_db("db/filmprojekt.db")
+    db.execute("DELETE FROM user_movie_relation WHERE movie_id = ? AND user_id = ?", movie_id, user_id)
 end
 
 def validate()
@@ -113,7 +134,7 @@ def logTime()
     end
     difTime = tempTime - session[:timeLogged]
 
-    if difTime < 500
+    if difTime < 1.5
         session[:timeLogged] = tempTime
         session[:stress] = true
         return false
