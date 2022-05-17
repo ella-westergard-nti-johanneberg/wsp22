@@ -17,7 +17,7 @@ html lang="en"
                 a href="/showadminregister"  
                     h2 Register as admin
 
-            -if session[:id] != nil && session[:auth] == 1 || session[:auth] == 2
+            -if session[:id] != nil && session[:auth] != nil 
                 a href="/movies"
                     h2 All movies 
                 a href="/new" 

@@ -1,146 +1,171 @@
-def connect_to_db(path)
-    db = SQLite3::Database.new(path)
-    db.results_as_hash = true
-    return db
-end
-
-def index()
-    db = connect_to_db("db/filmprojekt.db")
-    return db.execute("SELECT * FROM movie")
-end
-
-def  login(username, password)
-    db = connect_to_db("db/filmprojekt.db")
-    result = db.execute("SELECT * FROM user WHERE username = ?",username).first
-    if result == nil
-      redirect("/")
-      p "Fel"
+module Model
+    # Attempts to open a new database connection
+    # @return [Array] containing all the data from the database
+    def connect_to_db(path)
+        db = SQLite3::Database.new(path)
+        db.results_as_hash = true
+        return db
     end
-    pwdigest = result["pwdigest"]
-    id = result["id"]
-    auth = result["authority"]
-    if BCrypt::Password.new(pwdigest) == password
-      session[:id] = id
-      session[:auth] = auth
-      redirect('/')
-    else
-        p "fel lösen"
-        redirect('/')
-    end
-end
-
-def account(id)
-    db = connect_to_db("db/filmprojekt.db")
-    return db.execute("SELECT * FROM user WHERE id = ?", id).first
-end
-
-def account_rating(id)
-    db = connect_to_db("db/filmprojekt.db")
-    return db.execute("SELECT * FROM user_movie_relation WHERE user_id =?", id)
-end
-
-def new_user(username, password, password_confirm)
-    if(password == password_confirm)
-        password_digest = BCrypt::Password.create(password)
-        authority = 1
+    #Attempts to select all movies
+    # @update [Integer] containing the average rate of all rates on each movie
+    # @return [Array] containing all the movies from the database
+    # @see Model#connect_to_db
+    def index()
         db = connect_to_db("db/filmprojekt.db")
-        db.execute("INSERT INTO user (username,pwdigest,authority) VALUES (?,?,?)",username,password_digest,authority)
-        redirect('/')
-      else
-        "Lösenorden matchade inte"
-      end
-end
-
-def new_user_admin(username, password, password_confirm)
-    if(password == password_confirm)
-        password_digest = BCrypt::Password.create(password)
-        authority = 2
+        movies = db.execute("SELECT * FROM movie")
+        movies.each do |movie|
+            avg_rate = db.execute("SELECT AVG(rating) FROM user_movie_relation WHERE movie_id = ?", movie['Id']).first['AVG(rating)']
+            p avg_rate
+            db.execute("UPDATE movie SET avg_rate = ? WHERE id = ?",avg_rate, movie['Id'])
+        end
+        movies = db.execute("SELECT * FROM movie")
+        return movies
+    end
+     # Attempts to check if user can login
+     # @see Model#connect_to_db
+    def  login(username, password)
         db = connect_to_db("db/filmprojekt.db")
-        db.execute("INSERT INTO user (username,pwdigest,authority) VALUES (?,?,?)",username,password_digest,authority)
-        redirect('/')
-      else
-        "Lösenorden matchade inte"
-      end
-end
-
-def genres()
-    db = connect_to_db("db/filmprojekt.db")
-    return db.execute("SELECT * FROM genre")
-end
-
-def new_movie()
-    db = connect_to_db("db/filmprojekt.db")
-    return db.execute("SELECT * FROM genre")
-end
-
-def new_movie_post(movie, genre_id, link)
-    db = connect_to_db("db/filmprojekt.db")
-    db.execute("INSERT INTO movie (Name, link, Genre_id) VALUES (?, ?, ?)",movie, link, genre_id)
-end
-
-def delete(id)
-    db = connect_to_db("db/filmprojekt.db")
-    db.execute("DELETE FROM movie WHERE Id='#{id}'")
-end
-
-def update()
-    db = connect_to_db("db/filmprojekt.db")
-    return db.execute("SELECT * FROM movie WHERE Id=?", @editid).first
-end
-
-def update_post(movie, genre_id, link, editid)
-    db = connect_to_db("db/filmprojekt.db")
-    db.execute("UPDATE movie SET Name = ?, Genre_id = ?, link = ?  WHERE Id=?", movie, genre_id, link, editid)
-end
-
-def rate(rateid)
-    db = connect_to_db("db/filmprojekt.db")
-    db.execute("SELECT * FROM movie WHERE id=?", rateid).first
-end
-
-def rate_post(user_rate, movie_id, user_id)
-    db = connect_to_db("db/filmprojekt.db")
-    
-
-    if db.execute("SELECT rating FROM user_movie_relation WHERE user_id = ? AND movie_id = ?", user_id, movie_id).first == nil
-        db.execute("INSERT INTO user_movie_relation (rating, user_id, movie_id) VALUES (?,?,?)", user_rate, user_id, movie_id)
-    else
-        db.execute("UPDATE user_movie_relation SET rating = ? WHERE user_id = ? AND movie_id = ?", user_rate, user_id, movie_id)
+        result = db.execute("SELECT * FROM user WHERE username = ?",username).first
+        if result == nil
+          return false
+        end
+        pwdigest = result["pwdigest"]
+        id = result["id"]
+        auth = result["authority"]
+        if BCrypt::Password.new(pwdigest) == password
+          return[id, auth]
+        else
+            return false
+        end
     end
-end
-
-def rate_delete(movie_id, user_id)
-    db = connect_to_db("db/filmprojekt.db")
-    db.execute("DELETE FROM user_movie_relation WHERE movie_id = ? AND user_id = ?", movie_id, user_id)
-end
-
-def validate()
-    if session[:id] == nil
-        redirect('/error')
+    #Attempts to select all user info
+    # @return [Hash] containing all user account information
+    def account(id)
+        db = connect_to_db("db/filmprojekt.db")
+        return db.execute("SELECT * FROM user WHERE id = ?", id).first
     end
-end
-
-def validate_admin()
-    if session[:id] == nil || session[:auth] == 1
-        redirect('/adminerror')
+    #Attempts to select all the users ratings
+    # @return [Hash] containing all the users ratings
+    def account_rating(id)
+        db = connect_to_db("db/filmprojekt.db")
+        return db.execute("SELECT * FROM user_movie_relation WHERE user_id =?", id)
     end
-end
-
-def logTime()
-    tempTime = Time.now.to_i
-
-    if session[:timeLogged] == nil
-        session[:timeLogged] = 0
+    # Attempts to register user
+    # @param [String] password, the password input
+    # @param [String] username, the user username
+    # @return [Boolean] whether the user registration succeeds 
+    # @see Model#connect_to_db
+    def new_user(username, password, password_confirm)
+        if(password == password_confirm)
+            password_digest = BCrypt::Password.create(password)
+            authority = 1
+            db = connect_to_db("db/filmprojekt.db")
+            db.execute("INSERT INTO user (username,pwdigest,authority) VALUES (?,?,?)",username,password_digest,authority)
+            return true
+          else
+            return false
+            "Lösenorden matchade inte"
+          end
     end
-    difTime = tempTime - session[:timeLogged]
+    # Attempts to register user
+    # @param [String] password, the password input
+    # @param [String] username, the user username
+    # @return [Boolean] whether the user registration succeeds 
+    # @see Model#connect_to_db
+    def new_user_admin(username, password, password_confirm)
+        if(password == password_confirm)
+            password_digest = BCrypt::Password.create(password)
+            authority = 2
+            db = connect_to_db("db/filmprojekt.db")
+            db.execute("INSERT INTO user (username,pwdigest,authority) VALUES (?,?,?)",username,password_digest,authority)
+            return true
+          else
+            "Lösenorden matchade inte"
+            return false
+          end
+    end
+    # Attempts to check if the user is logged in or not
+    # @return [Boolean] true if the user is not logged in and false if the user is logged in
+    def id_nil(id)
+        return id == nil
+    end
+     #Attempts to select all the available genres
+    # @return [Hash] containing all the avaible genres
+     # @see Model#connect_to_db
+    def genres()
+        db = connect_to_db("db/filmprojekt.db")
+        return db.execute("SELECT * FROM genre")
+    end
+    # Attempts to create a new movie in database
+    #
+    def new_movie_post(movie, genre_id, link, user_id)
+        db = connect_to_db("db/filmprojekt.db")
+        db.execute("INSERT INTO movie (Name, link, Genre_id, user_id) VALUES (?, ?, ?, ?)",movie, link, genre_id, user_id)
+    end
+    # Attempts to delete an existing show in database
+    def delete(id)
+        db = connect_to_db("db/filmprojekt.db")
+        db.execute("DELETE FROM movie WHERE Id='#{id}'")
+        db.execute("DELETE FROM user_movie_relation WHERE movie_id='#{id}'")
+    end
+    # Attempts to retrieve all movie info with a specified id
+    # @return [Hash] containing all movie info with a specified if
+    def update()
+        db = connect_to_db("db/filmprojekt.db")
+        return db.execute("SELECT * FROM movie WHERE Id=?", @editid).first
+    end
 
-    if difTime < 1.5
-        session[:timeLogged] = tempTime
-        session[:stress] = true
-        return false
-    else
-        session[:timeLogged] = tempTime
-        session[:stress] = false
-        return true
+    def update_post(movie, genre_id, link, editid)
+        db = connect_to_db("db/filmprojekt.db")
+        db.execute("UPDATE movie SET Name = ?, Genre_id = ?, link = ?  WHERE Id=?", movie, genre_id, link, editid)
+    end
+
+    def rate(rateid)
+        db = connect_to_db("db/filmprojekt.db")
+        db.execute("SELECT * FROM movie WHERE id=?", rateid).first
+    end
+
+    def rate_post(user_rate, movie_id, user_id)
+        db = connect_to_db("db/filmprojekt.db")
+
+
+        if db.execute("SELECT rating FROM user_movie_relation WHERE user_id = ? AND movie_id = ?", user_id, movie_id).first == nil
+            db.execute("INSERT INTO user_movie_relation (rating, user_id, movie_id) VALUES (?,?,?)", user_rate, user_id, movie_id)
+        else
+            db.execute("UPDATE user_movie_relation SET rating = ? WHERE user_id = ? AND movie_id = ?", user_rate, user_id, movie_id)
+        end
+    end
+
+    def rate_delete(movie_id, user_id)
+        db = connect_to_db("db/filmprojekt.db")
+        db.execute("DELETE FROM user_movie_relation WHERE movie_id = ? AND user_id = ?", movie_id, user_id)
+    end
+    # Attempts to check if the user id is what is required and if the user has the correct authorization
+    # @return [Boolean] whetever the above stated is true
+    def authority(session_id, session_auth, required_session_id, required_session_auth)
+        return session_id == required_session_id && session_auth == required_session_auth
+
+    end
+    # Attempts to check if too many inputs are recieved in close proximity
+    # @param [Integer] latestTime, the latest logged time
+    # @return [Boolean] whether the inputs are recieved in close proximity
+    # @see Model#connect_to_db
+    def logTime(stress, timeLogged)
+        tempTime = Time.now.to_i
+
+        if timeLogged == nil
+            timeLogged = 0
+        end
+        difTime = tempTime - timeLogged
+
+        if difTime < 1.5
+            timeLogged = tempTime
+            stress = true
+            return false
+        else
+            timeLogged = tempTime
+            stress = false
+            return true
+        end
     end
 end

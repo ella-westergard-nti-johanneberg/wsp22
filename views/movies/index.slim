@@ -7,16 +7,11 @@ h1 All movies
     li 
       a #{movie["Name"]} /
       a href="#{movie['link']}" Gå till faktasida
-      - db = SQLite3::Database.new("db/filmprojekt.db")
-      - db.results_as_hash = true
-      - average_rating = db.execute("SELECT AVG(rating) FROM user_movie_relation WHERE movie_id = ?", movie['Id'])[0]['AVG(rating)']
-      -if average_rating != nil
-        p Rating: #{average_rating}
-      form method="GET" action="movie/#{movie['Id']}/update"
+      p Rating: #{movie["avg_rate"]}
+      form method="POST" action="movie/#{movie['Id']}/#{movie['user_id']}/delete"
+        input type="submit" value="Delete"
+      form method="GET" action="movie/#{movie['Id']}/#{movie['user_id']}/update"
         input type="submit" value="Update" 
-      -if session[:auth] == 2
-        form method="POST" action="movie/#{movie['Id']}/delete"
-          input type="submit" value="Delete"
       form method="GET" action="movie/#{movie['Id']}/rate"
         input type="submit" value="Rate"
 
