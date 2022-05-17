@@ -89,6 +89,9 @@ post('/users') do
         username = params[:username]
         password = params[:password]
         password_confirm = params[:password_confirm]
+        if isEmpty(username) || isEmpty(password) 
+            redirect('/error')
+        end
         if new_user(username, password, password_confirm) == false
             redirect('error')
         end
@@ -103,10 +106,16 @@ post('/admin') do
         username = params[:username]
         password = params[:password]
         password_confirm = params[:password_confirm]
-        new_user_admin(username, password, password_confirm)
+        if isEmpty(username) || isEmpty(password) 
+            redirect('/error')
+        end
+        if new_user_admin(username, password, password_confirm) == false
+            redirect('/error')
+        end
     else
         redirect('/showadminregister')
     end
+    
 end
 
 # Displays a form to post new movie
@@ -126,19 +135,18 @@ post("/movie") do
     genre_id = params[:genre_id]
     link = params[:link]
     user_id = session[:id]
-    
+    if isEmpty(movie)
+        redirect('/error')
+    end
     new_movie_post(movie, genre_id, link, user_id)
     redirect('/')
 end
 # Deletes an existing movie
-post("/movie/:id/:user_id/delete") do
+post("/movie/:id/delete") do
     id = params[:id]
-    user_id = params[:user_id].to_i
-
-    if authority(session[:id], session[:auth], user_id, 2) == false
+    if ownership(session[:id], id, session[:auth], 2) == false
         redirect('/error')
     end
-   
     delete(id)
     
     redirect('/')
@@ -157,14 +165,11 @@ post("/movies/:movie_id/rate_delete") do
     redirect('/showaccount')
 end
 # Displays a edit movie form
-get("/movie/:id/:user_id/update") do
+get("/movie/:id/update") do
     @editid = params[:id]
-    user_id = params[:user_id].to_i
-
-    if authority(session[:id], session[:auth], user_id, 2) == false
+    if ownership(session[:id], @editid, session[:auth], 2) == false
         redirect('/error')
     end
-
     @genres = genres()
     @editmovie = update()
 
@@ -177,7 +182,9 @@ post("/movie/:editid/update") do
     genre_id = params[:genre_id]
     link = params[:link]
     editid = params[:editid]
-    
+    if isEmpty(movie)
+        redirect('/error')
+    end
     update_post(movie, genre_id, link, editid)
     redirect('/movies')
 end

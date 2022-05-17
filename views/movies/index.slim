@@ -8,9 +8,9 @@ h1 All movies
       a #{movie["Name"]} /
       a href="#{movie['link']}" Gå till faktasida
       p Rating: #{movie["avg_rate"]}
-      form method="POST" action="movie/#{movie['Id']}/#{movie['user_id']}/delete"
+      form method="POST" action="movie/#{movie['Id']}/delete"
         input type="submit" value="Delete"
-      form method="GET" action="movie/#{movie['Id']}/#{movie['user_id']}/update"
+      form method="GET" action="movie/#{movie['Id']}/update"
         input type="submit" value="Update" 
       form method="GET" action="movie/#{movie['Id']}/rate"
         input type="submit" value="Rate"

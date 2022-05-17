@@ -90,7 +90,7 @@ module Model
         return id == nil
     end
      #Attempts to select all the available genres
-    # @return [Hash] containing all the avaible genres
+     # @return [Hash] containing all the avaible genres
      # @see Model#connect_to_db
     def genres()
         db = connect_to_db("db/filmprojekt.db")
@@ -142,9 +142,15 @@ module Model
     end
     # Attempts to check if the user id is what is required and if the user has the correct authorization
     # @return [Boolean] whetever the above stated is true
-    def authority(session_id, session_auth, required_session_id, required_session_auth)
-        return session_id == required_session_id && session_auth == required_session_auth
 
+    def ownership(user_id,movie_id, authority, exception_authority)
+        db = connect_to_db("db/filmprojekt.db")
+        owner = db.execute("SELECT user_id FROM movie WHERE Id = ?", movie_id).first["user_id"]
+        if user_id == owner || authority == exception_authority
+            return true
+        else
+            return false
+        end
     end
     # Attempts to check if too many inputs are recieved in close proximity
     # @param [Integer] latestTime, the latest logged time
@@ -167,5 +173,14 @@ module Model
             stress = false
             return true
         end
+    end
+end
+def isEmpty(text)
+    if text == nil
+        return true
+    elsif text == "" || text.scan(/ /).empty? == false 
+        return true
+    else
+        return false
     end
 end
